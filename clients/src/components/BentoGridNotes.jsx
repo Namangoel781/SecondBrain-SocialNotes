@@ -1,7 +1,6 @@
 import React from "react";
 import NoteCard from "./NoteCard";
 import Masonry from "react-masonry-css";
-import FetchUserSharedContent from "./FetchUserSharedContent";
 
 const BentoGridNotes = ({ notes, onDelete, onShare }) => {
   const breakpointColumnsObj = {
@@ -24,8 +23,6 @@ const BentoGridNotes = ({ notes, onDelete, onShare }) => {
           onShare={() => onShare(note)}
         />
       ))}
-
-      {/* <FetchUserSharedContent /> */}
     </Masonry>
   );
 };

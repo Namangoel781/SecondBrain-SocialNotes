@@ -7,6 +7,7 @@ import ShareModal from "../components/Modal";
 import AddContentModal from "../components/AddContent";
 import API from "../api/api";
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
+import FetchUserSharedContent from "@/components/FetchUserSharedContent";
 
 const Dashboard = () => {
   const [notes, setNotes] = useState([]);
@@ -16,6 +17,10 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null); // Success message state
   const [selectedNote, setSelectedNote] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
+  const totalPages = Math.ceil(notes.length / itemsPerPage);
+  const [activeTab, setActiveTab] = useState("tweets");
 
   const fetchNotes = async () => {
     try {
@@ -134,9 +139,22 @@ const Dashboard = () => {
     );
   }
 
+  const handlePreviousPage = () => {
+    if (currentPage > 1) setCurrentPage((prevPage) => prevPage - 1);
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage((prevPage) => prevPage + 1);
+  };
+
+  const paginatedNotes = notes.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   return (
     <div className="min-h-screen bg-background flex">
-      <Sidebar />
+      <Sidebar setActiveTab={setActiveTab} activeTab={activeTab} />
       <main className="flex-1 overflow-auto">
         <Header
           onShareClick={() => setIsShareModalOpen(true)}
@@ -155,18 +173,48 @@ const Dashboard = () => {
               <AlertDescription>{success}</AlertDescription>
             </Alert>
           )}
-          {notes.length > 0 ? (
-            <BentoGridNotes
-              notes={notes}
-              onDelete={deleteNote}
-              onShare={handleShare}
-            />
+          {activeTab === "tweets" ? (
+            <>
+              <BentoGridNotes
+                notes={paginatedNotes}
+                onDelete={deleteNote}
+                onShare={handleShare}
+              />
+            </>
+          ) : activeTab === "shared" ? (
+            <FetchUserSharedContent />
           ) : (
             <div className="text-center text-muted-foreground">
-              <p>No notes available.</p>
-              <p className="mt-2">Start by creating your first note!</p>
+              <p>No content available for this tab.</p>
             </div>
           )}
+          <div className="flex justify-center items-center gap-4 mt-4">
+            <button
+              onClick={handlePreviousPage}
+              disabled={currentPage === 1}
+              className={`px-4 py-2 rounded-md ${
+                currentPage === 1
+                  ? "bg-gray-300 cursor-not-allowed"
+                  : "bg-primary text-white"
+              }`}
+            >
+              Previous
+            </button>
+            <span>
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={handleNextPage}
+              disabled={currentPage === totalPages}
+              className={`px-4 py-2 rounded-md ${
+                currentPage === totalPages
+                  ? "bg-gray-300 cursor-not-allowed"
+                  : "bg-primary text-white"
+              }`}
+            >
+              Next
+            </button>
+          </div>
         </div>
       </main>
       <AddContentModal
