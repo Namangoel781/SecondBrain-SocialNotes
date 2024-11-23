@@ -14,6 +14,7 @@ const Dashboard = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null); // Success message state
   const [selectedNote, setSelectedNote] = useState(null);
 
   const fetchNotes = async () => {
@@ -43,13 +44,20 @@ const Dashboard = () => {
   };
 
   const addContent = async (contentData) => {
-    const validTypes = ["Article", "Video", "Audio", "tweets"];
+    const validTypes = ["video", "article", "image", "tweets"]; // Ensure correct types
     if (!validTypes.includes(contentData.type)) {
       setError(
         `Invalid type: ${contentData.type}. Please select a valid type.`
       );
       return;
     }
+
+    if (!Array.isArray(contentData.tags) || contentData.tags.length === 0) {
+      setError("Tags should be an array and cannot be empty.");
+      return;
+    }
+
+    console.log("Sending contentData:", contentData);
 
     const token = localStorage.getItem("token");
     if (!token) {
@@ -62,8 +70,9 @@ const Dashboard = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const savedContent = response.data;
+      const savedContent = response.data.content;
       setNotes((prevNotes) => [...prevNotes, savedContent]);
+      setSuccess("Content added successfully!"); // Set success message
       setIsAddModalOpen(false);
     } catch (error) {
       console.error("Error adding content:", error);
@@ -80,6 +89,7 @@ const Dashboard = () => {
       setNotes((prevNotes) =>
         prevNotes.filter((note) => note.id !== contentId)
       );
+      setSuccess("Content deleted successfully!"); // Set success message
     } catch (error) {
       console.error("Error deleting note:", error);
       setError(
@@ -104,10 +114,17 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (error) {
-      const timer = setTimeout(() => setError(null), 5000); // Clear error after 5 seconds
-      return () => clearTimeout(timer); // Cleanup timer
+      const timer = setTimeout(() => setError(null), 5000);
+      return () => clearTimeout(timer);
     }
   }, [error]);
+
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => setSuccess(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
 
   if (loading) {
     return (
@@ -132,14 +149,17 @@ const Dashboard = () => {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
+          {success && (
+            <Alert variant="success" className="mb-4">
+              <AlertTitle>Success</AlertTitle>
+              <AlertDescription>{success}</AlertDescription>
+            </Alert>
+          )}
           {notes.length > 0 ? (
             <BentoGridNotes
               notes={notes}
               onDelete={deleteNote}
-              onShare={(note) => {
-                setSelectedNote(note); // Set the selected note here
-                setIsShareModalOpen(true); // Open the share modal
-              }}
+              onShare={handleShare}
             />
           ) : (
             <div className="text-center text-muted-foreground">

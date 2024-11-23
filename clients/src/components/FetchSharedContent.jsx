@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import API from "../api/api";
+import axios from "axios";
 import { Tweet } from "react-tweet";
 import {
   Card,
@@ -11,21 +12,19 @@ import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Share2, Trash2 } from "lucide-react";
 
-const FetchSharedContent = ({ link: initialLink }) => {
+const SharedContentPage = ({ link: initialLink }) => {
   const [link, setLink] = useState(initialLink || "");
   const [content, setContent] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState("");
+  const [contentType, setContentType] = useState("Tweet");
 
-  const isValidUrl = (url) => {
-    const regex =
-      /^http:\/\/localhost:5000\/api\/v1\/brain\/shared_[a-z0-9]+_[a-z0-9]+$/;
-    return regex.test(url);
-  };
+  const validTypes = ["Article", "Video", "Audio", "Tweet"];
 
   const isValidSharedUrl = (url) => {
-    const regex = /^shared_[a-z0-9]+_[a-z0-9]+$/;
+    const regex =
+      /^shared_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
     return regex.test(url);
   };
 
@@ -33,34 +32,18 @@ const FetchSharedContent = ({ link: initialLink }) => {
     setError("");
     setContent(null);
 
-    if (!link) {
-      setError("Please enter a valid URL.");
-      return;
-    }
-
-    let contentId;
-    if (isValidUrl(link)) {
-      contentId = link.split("shared_")[1];
-      if (!contentId) {
-        setError("Invalid URL format. Please check the URL.");
-        return;
-      }
-    } else if (isValidSharedUrl(link)) {
-      contentId = link;
-    } else {
+    if (!link || !isValidSharedUrl(link)) {
       setError("Please enter a valid URL.");
       return;
     }
 
     try {
       setLoading(true);
-      const response = await API.get(`/brain/${contentId}`);
-
-      // Log the response to see its structure
+      const response = await API.get(`/brain/${link}`);
       console.log("API Response:", response);
 
       if (response.data && response.data.sharedContent) {
-        setContent(response.data.sharedContent); // Corrected the response key
+        setContent(response.data.sharedContent);
       } else {
         throw new Error("Content not found in the response.");
       }
@@ -75,76 +58,69 @@ const FetchSharedContent = ({ link: initialLink }) => {
     }
   };
 
-  const saveContent = async () => {
-    if (!content) {
-      setError("No content to save.");
+  const saveContent = async (contentData) => {
+    const { link, title, tags, userId, type } = contentData;
+    console.log("Content data to be saved:", contentData);
+
+    if (!link || !title) {
+      console.error("Missing fields: link, title");
+      alert("Link and title are required.");
       return;
     }
 
-    const validTypes = ["Article", "Video", "Audio", "tweets"];
-    if (!validTypes.includes(content.type)) {
-      setError(
-        `Invalid content type: ${content.type}. Please select a valid type.`
-      );
+    const normalizedType = type.trim().toLowerCase();
+    const validTypes = ["article", "video", "audio", "tweets"];
+
+    if (!validTypes.includes(normalizedType)) {
+      console.error("Invalid content type:", type);
+      alert("Invalid content type. Please select a valid type.");
+      return;
+    }
+
+    const normalizedTags = tags
+      .map((tag) => (typeof tag === "string" ? tag : tag.title || "").trim())
+      .filter((tag) => tag.trim() !== ""); // Normalize to plain strings and remove empty values
+
+    if (
+      !Array.isArray(normalizedTags) ||
+      normalizedTags.some((tag) => typeof tag !== "string")
+    ) {
+      alert("Tags must be an array of non-empty strings.");
       return;
     }
 
     const token = localStorage.getItem("token");
+
     if (!token) {
-      setError("You must be logged in to save content.");
+      console.log("Authorization token missing");
+      alert("You must be logged in to save content");
       return;
     }
-
-    const user = localStorage.getItem("user");
-    if (!user) {
-      setError("No user found in localstorage. Please log in.");
-      return;
-    }
-
-    let userId = null;
-    try {
-      const parsedUser = JSON.parse(user); // Safely parse the user object
-      userId = parsedUser?.id; // Access the id if parsed successfully
-    } catch (error) {
-      setError("Failed to parse user data.");
-      return;
-    }
-
-    if (!userId) {
-      setError("User data is missing or invalid.");
-      return;
-    }
-
-    const tags = Array.isArray(content.tags)
-      ? content.tags.map((tag) => String(tag)) // Convert all elements to strings
-      : [];
 
     try {
-      setSaveStatus("Saving Content...");
-      const response = await API.post(
-        "/content",
+      const response = await axios.post(
+        "http://localhost:5000/api/v1/content",
         {
           link,
-          type: content.type,
-          title: content.title || "Untitled",
-          tags,
-          userId: userId,
+          type: normalizedType,
+          title,
+          tags: normalizedTags,
+          userId,
         },
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
-
-      console.log("API Response:", response); // Log full response
-      setContent(response.data);
-      setSaveStatus("Content saved successfully.");
-    } catch (err) {
-      console.error("Error saving content:", err.response?.data || err.message);
-      setSaveStatus("Failed to save content.");
-      setError(
-        err.response?.data?.message ||
-          "An error occurred while saving the content. Please try again."
+      console.log("Content saved successfully:", response.data);
+      alert("Content saved successfully!");
+    } catch (error) {
+      console.error(
+        "Error saving content:",
+        error.response?.data || error.message
       );
+      alert("Failed to save content. Please try again.");
     }
   };
 
@@ -232,11 +208,22 @@ const FetchSharedContent = ({ link: initialLink }) => {
         </Card>
       )}
 
-      <Button onClick={saveContent} className="mt-4">
+      <Button
+        onClick={() =>
+          saveContent({
+            link: content.link, // Pass content data here
+            title: content.title,
+            tags: content.tags,
+            userId: "someUserId", // Dynamically use current user's ID
+            type: content.type || "Article", // Ensure type is valid
+          })
+        }
+        className="mt-4"
+      >
         Save Content
       </Button>
     </div>
   );
 };
 
-export default FetchSharedContent;
+export default SharedContentPage;

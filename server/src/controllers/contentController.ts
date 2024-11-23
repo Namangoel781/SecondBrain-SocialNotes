@@ -30,22 +30,22 @@ export const createContent = async (req: Request & {userId?: string}, res: Respo
             return
         }
 
-        const validTypes = ['Article', 'Video', 'Audio', 'Tweet']; // Add your valid types here
+        const validTypes = ['article', 'video', 'audio', 'tweets']; // Add your valid types here
         if (!validTypes.includes(type)) {
              res.status(400).json({ message: "Invalid content type" });
              return
         }
 
-        const bulkOps = tags.map(tagTitle => ({
-            updateOne: {
-                filter: { title: tagTitle },
-                update: { $setOnInsert: { title: tagTitle } },
-                upsert: true
-            }
-        }));
-        await Tag.bulkWrite(bulkOps);
-        
-        const tagIds = await Tag.find({ title: { $in: tags } }, { _id: 1 }).lean();
+        const tagIds = await Promise.all(
+            tags.map(async (tagTitle: string) => {
+                const tag = await Tag.findOneAndUpdate(
+                    { title: tagTitle },
+                    { $setOnInsert: { title: tagTitle } },
+                    { upsert: true, new: true }
+                );
+                return tag._id;
+            })
+        );
         
 
         const newContent = new Content({

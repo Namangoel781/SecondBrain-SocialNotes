@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 
+
 export interface IContent extends Document {
   link: string;
   type: 'video' | 'article' | 'image' | 'tweets' // Replace with actual enum values

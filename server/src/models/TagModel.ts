@@ -9,3 +9,4 @@ const TagSchema: Schema<ITag> = new Schema<ITag>({
 });
 
 export const Tag = mongoose.model<ITag>('Tag', TagSchema);
+

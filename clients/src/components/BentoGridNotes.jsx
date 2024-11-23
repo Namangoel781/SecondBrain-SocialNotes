@@ -25,7 +25,7 @@ const BentoGridNotes = ({ notes, onDelete, onShare }) => {
         />
       ))}
 
-      <FetchUserSharedContent />
+      {/* <FetchUserSharedContent /> */}
     </Masonry>
   );
 };
