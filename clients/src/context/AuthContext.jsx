@@ -8,6 +8,7 @@ export const AuthProvider = ({ children }) => {
     const savedUser = localStorage.getItem("user");
     return savedUser ? JSON.parse(savedUser) : null;
   });
+  const [loading, setLoading] = useState(true);
 
   const decodeAndSetUser = (token) => {
     try {
@@ -19,17 +20,20 @@ export const AuthProvider = ({ children }) => {
       }
 
       if (decoded?.userId) {
-        setUser({
+        const userData = {
           id: decoded.userId,
           email: decoded.email || null,
           roles: decoded.roles || [],
-        });
+        };
+        setUser(userData);
+        localStorage.setItem("user", JSON.stringify(userData));
       } else {
         throw new Error("Token missing required user information");
       }
     } catch (error) {
       console.error("Error decoding token:", error);
       localStorage.removeItem("token");
+      localStorage.removeItem("user");
       setUser(null);
     }
   };
@@ -39,22 +43,12 @@ export const AuthProvider = ({ children }) => {
     if (token) {
       decodeAndSetUser(token);
     }
+    setLoading(false);
   }, []);
 
   const login = (token) => {
     try {
       localStorage.setItem("token", token);
-
-      const decoded = jwtDecode(token);
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          id: decoded.userId,
-          email: decoded.email,
-          roles: decoded.roles || [],
-        })
-      );
-
       decodeAndSetUser(token);
     } catch (error) {
       console.error("Invalid token on login:", error);
@@ -68,7 +62,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

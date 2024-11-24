@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import Sidebar from "../components/Slidbar";
 import Header from "../components/Header";
@@ -21,6 +22,8 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("tweets");
   const [isSharedContentModalOpen, setIsSharedContentModalOpen] =
     useState(false);
+
+  const navigate = useNavigate(); // Navigation hook
 
   const itemsPerPage = 6;
   const {
@@ -123,8 +126,13 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    fetchNotes();
-  }, []);
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login"); // Redirect to login if no token
+    } else {
+      fetchNotes();
+    }
+  }, [navigate]);
 
   useEffect(() => {
     if (error) {
@@ -170,13 +178,11 @@ const Dashboard = () => {
             </Alert>
           )}
           {activeTab === "tweets" ? (
-            <>
-              <BentoGridNotes
-                notes={paginatedItems}
-                onDelete={deleteNote}
-                onShare={handleShare}
-              />
-            </>
+            <BentoGridNotes
+              notes={paginatedItems}
+              onDelete={deleteNote}
+              onShare={handleShare}
+            />
           ) : activeTab === "shared" ? (
             <FetchUserSharedContent />
           ) : (

@@ -8,15 +8,24 @@ import {
 import { useParams } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import AuthPage from "./pages/Auth";
-import { AuthContext, AuthProvider } from "./context/AuthContext";
+import { AuthContext } from "./context/AuthContext";
 import FetchSharedContent from "./components/FetchSharedContent";
 
-const ProtectedRoute = ({ children }) => {
-  const { user } = useContext(AuthContext);
+const ProtectedRoute = ({ children, allowedRoles }) => {
+  const { user, loading } = useContext(AuthContext);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   if (!user) {
     return <Navigate to="/" replace />;
   }
+
+  if (allowedRoles && !allowedRoles.some((role) => user.roles.includes(role))) {
+    return <Navigate to="/unauthorized" replace />;
+  }
+
   return children;
 };
 
