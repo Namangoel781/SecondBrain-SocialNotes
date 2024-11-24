@@ -10,6 +10,9 @@ const FetchUserSharedContent = () => {
   const [content, setContent] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
+  const totalPages = Math.ceil(content.length / itemsPerPage);
 
   const breakpointColumnsObj = {
     default: 3, // For large screens (default)
@@ -50,17 +53,23 @@ const FetchUserSharedContent = () => {
 
       const fetchedSharedContents = response.data.sharedContents || [];
 
-      // Remove duplicates (based on `_id` field)
-      const uniqueContents = fetchedSharedContents.filter(
-        (value, index, self) =>
-          self.findIndex((v) => v._id === value._id) === index
-      );
+      const uniqueContents = [];
+      const seenLinks = new Set();
+
+      for (const item of fetchedSharedContents) {
+        if (!seenLinks.has(item.link)) {
+          seenLinks.add(item.link);
+          uniqueContents.push(item);
+        }
+      }
 
       if (uniqueContents.length === 0) {
         setError("No shared content found for this user.");
       } else {
-        setContent(uniqueContents);
+        setContent(uniqueContents); // Replace the state with unique entries
       }
+      console.log("API Response:", fetchedSharedContents);
+      console.log("Unique Contents:", uniqueContents);
     } catch (err) {
       console.error("Error fetching shared contents: ", err);
       setError(
@@ -79,6 +88,19 @@ const FetchUserSharedContent = () => {
   if (loading) {
     return <p className="text-center text-gray-500">Loading...</p>;
   }
+
+  const paginatedContent = content.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+  };
 
   return (
     <div className="p-6 bg-white rounded-md shadow-md">
@@ -128,8 +150,9 @@ const FetchUserSharedContent = () => {
                   </div>
                   <p className="text-xs text-gray-500">
                     Added on{" "}
-                    {new Date(sharedContent.createdAt).toLocaleDateString() ||
-                      "Recent"}
+                    {sharedContent.createdAt
+                      ? new Date(sharedContent.createdAt).toLocaleDateString()
+                      : "Recent"}
                   </p>
                 </CardFooter>
               </Card>
@@ -144,7 +167,6 @@ const FetchUserSharedContent = () => {
   );
 };
 
-// Function to extract the Tweet ID from the URL
 const extractTweetId = (url) => {
   const match = url.match(/status\/(\d+)/);
   return match ? match[1] : null;

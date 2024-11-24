@@ -8,6 +8,7 @@ import AddContentModal from "../components/AddContent";
 import API from "../api/api";
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import FetchUserSharedContent from "@/components/FetchUserSharedContent";
+import usePagination from "../context/usePagination";
 
 const Dashboard = () => {
   const [notes, setNotes] = useState([]);
@@ -17,10 +18,18 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null); // Success message state
   const [selectedNote, setSelectedNote] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
-  const totalPages = Math.ceil(notes.length / itemsPerPage);
   const [activeTab, setActiveTab] = useState("tweets");
+  const [isSharedContentModalOpen, setIsSharedContentModalOpen] =
+    useState(false);
+
+  const itemsPerPage = 6;
+  const {
+    paginatedItems,
+    currentPage,
+    totalPages,
+    handleNextPage,
+    handlePreviousPage,
+  } = usePagination(notes, itemsPerPage);
 
   const fetchNotes = async () => {
     try {
@@ -139,19 +148,6 @@ const Dashboard = () => {
     );
   }
 
-  const handlePreviousPage = () => {
-    if (currentPage > 1) setCurrentPage((prevPage) => prevPage - 1);
-  };
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages) setCurrentPage((prevPage) => prevPage + 1);
-  };
-
-  const paginatedNotes = notes.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
   return (
     <div className="min-h-screen bg-background flex">
       <Sidebar setActiveTab={setActiveTab} activeTab={activeTab} />
@@ -176,7 +172,7 @@ const Dashboard = () => {
           {activeTab === "tweets" ? (
             <>
               <BentoGridNotes
-                notes={paginatedNotes}
+                notes={paginatedItems}
                 onDelete={deleteNote}
                 onShare={handleShare}
               />

@@ -37,7 +37,7 @@ function App() {
           path="/shared-content"
           element={
             <ProtectedRoute>
-              <FetchSharedContentWrapper />
+              <FetchSharedContent />
             </ProtectedRoute>
           }
         />
