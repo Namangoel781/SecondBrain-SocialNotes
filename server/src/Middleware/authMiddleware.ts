@@ -27,7 +27,6 @@ export const authMiddleware = (fields: string[]) => {
     }
     try {
         const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
-        console.log("Decoded token:", decoded); // Log the decoded token
         req.userId = decoded.userId; // Extend the req object with userId
         next();
     } catch (error) {

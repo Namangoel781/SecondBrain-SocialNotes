@@ -10,6 +10,7 @@ import API from "../api/api";
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import FetchUserSharedContent from "@/components/FetchUserSharedContent";
 import usePagination from "../context/usePagination";
+import SavedYTVidoes from "../components/YoutubeFetchedContent";
 
 const Dashboard = () => {
   const [notes, setNotes] = useState([]);
@@ -24,8 +25,9 @@ const Dashboard = () => {
     useState(false);
 
   const navigate = useNavigate(); // Navigation hook
-
   const itemsPerPage = 6;
+
+  // Pagination setup for all content types
   const {
     paginatedItems,
     currentPage,
@@ -100,9 +102,25 @@ const Dashboard = () => {
     }
   };
 
-  const deleteNote = async (contentId) => {
+  const deleteNote = async (contentId, video) => {
+    if (!video || !video._id) {
+      console.error("Video object or video.id is undefined");
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setError("You must be logged in to perform this action.");
+      return;
+    }
+
     try {
-      await API.delete(`/content/${contentId}`);
+      const url = `/content/${contentId}`;
+      await API.delete(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       setNotes((prevNotes) =>
         prevNotes.filter((note) => note.id !== contentId)
       );
@@ -116,12 +134,23 @@ const Dashboard = () => {
     }
   };
 
-  const handleShare = (note) => {
-    if (note && note.id) {
-      setSelectedNote(note);
-      setIsShareModalOpen(true);
+  const handleShare = (content, type) => {
+    if (type === "note") {
+      if (content && content.id && content.title) {
+        setSelectedNote(content);
+        setIsShareModalOpen(true);
+      } else {
+        setError("Selected note is invalid");
+      }
+    } else if (type === "video") {
+      if (content && content._id && content.title) {
+        setSelectedNote(content);
+        setIsShareModalOpen(true);
+      } else {
+        setError("Selected video is invalid");
+      }
     } else {
-      setError("Selected note is invalid.");
+      setError("Invalid content type for sharing");
     }
   };
 
@@ -179,12 +208,21 @@ const Dashboard = () => {
           )}
           {activeTab === "tweets" ? (
             <BentoGridNotes
-              notes={paginatedItems}
+              notes={paginatedItems.filter((note) => note.type === "tweets")}
               onDelete={deleteNote}
-              onShare={handleShare}
+              onShare={(note) => handleShare(note, "note")}
             />
           ) : activeTab === "shared" ? (
             <FetchUserSharedContent />
+          ) : activeTab === "videos" ? (
+            <SavedYTVidoes
+              notes={paginatedItems.filter((note) => note.type === "video")}
+              onDelete={deleteNote}
+              onShare={(video) => {
+                console.log("Video object:", video);
+                handleShare(video, "video");
+              }}
+            />
           ) : (
             <div className="text-center text-muted-foreground">
               <p>No content available for this tab.</p>
@@ -227,7 +265,7 @@ const Dashboard = () => {
       <ShareModal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
-        content={selectedNote} // Pass the selected note to ShareModal
+        content={selectedNote}
       />
     </div>
   );

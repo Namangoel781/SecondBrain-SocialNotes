@@ -32,7 +32,7 @@ export default function AddContentModal({ isOpen, onClose, onAddContent }) {
   };
 
   const handleTypeChange = (value) => {
-    setFormData((prev) => ({ ...prev, type: value }));
+    setFormData((prev) => ({ ...prev, type: value.toLowerCase() }));
   };
 
   const handleSubmit = (e) => {
@@ -94,14 +94,14 @@ export default function AddContentModal({ isOpen, onClose, onAddContent }) {
                 <SelectValue placeholder="Select Type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Article">Article</SelectItem>
-                <SelectItem value="Video">Video</SelectItem>
-                <SelectItem value="Audio">Audio</SelectItem>
+                <SelectItem value="article">Article</SelectItem>
+                <SelectItem value="video">Video</SelectItem>
+                <SelectItem value="audio">Audio</SelectItem>
                 <SelectItem value="tweets">Tweets</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          {formData.type === "tweets" && (
+          {["video", "audio", "tweets", "article"].includes(formData.type) && (
             <div className="space-y-2">
               <Label htmlFor="link">Link</Label>
               <Input

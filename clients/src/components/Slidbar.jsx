@@ -35,8 +35,8 @@ const Sidebar = ({ setActiveTab, activeTab }) => {
         />
         <SidebarButton
           icon={<FileText className="w-4 h-4" />}
-          label="Documents"
-          isActive={activeTab === "documents"}
+          label="Articles"
+          isActive={activeTab === "articles"}
           onClick={() => handleTabSwitch("documents")}
         />
         <SidebarButton

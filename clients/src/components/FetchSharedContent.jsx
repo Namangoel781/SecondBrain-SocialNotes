@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import API from "../api/api";
 import axios from "axios";
 import { Tweet } from "react-tweet";
+import YouTube from "react-youtube";
 import {
   Card,
   CardContent,
@@ -128,6 +129,23 @@ const SharedContentPage = ({ link: initialLink }) => {
     if (initialLink) fetchContent(); // Fetch content if initialLink is provided
   }, [initialLink]);
 
+  const youtubeOptions = {
+    height: "390",
+    width: "100%",
+    playerVars: {
+      autoplay: 0,
+    },
+  };
+
+  const handleVideoError = (error) => {
+    console.error("Error loading video:", error);
+    alert("Failed to load video. Please try again later.");
+  };
+
+  const handleVideoReady = (event) => {
+    console.log("Video is ready:", event.target);
+  };
+
   if (loading) return <p>Loading...</p>;
 
   return (
@@ -177,7 +195,16 @@ const SharedContentPage = ({ link: initialLink }) => {
             </div>
           </CardHeader>
           <CardContent className="p-4">
-            {content.type === "tweets" && content.link ? (
+            {content.type === "video" && content.link ? (
+              <div className="border rounded-lg p-3 bg-gray-50">
+                <YouTube
+                  videoId={new URL(content.link).searchParams.get("v")}
+                  onError={handleVideoError}
+                  onReady={handleVideoReady}
+                  opts={youtubeOptions}
+                />
+              </div>
+            ) : content.type === "tweets" && content.link ? (
               <div className="border rounded-lg p-3 bg-blue-50">
                 <Tweet id={content.link.split("/status/")[1]} />
               </div>

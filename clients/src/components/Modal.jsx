@@ -29,14 +29,15 @@ export default function ShareModal({ isOpen, onClose, content }) {
   }, [isOpen]); // Log content when modal opens
 
   const handleShare = async () => {
-    if (!content || !content.id) {
+    if (!content || (!content.id && !content._id)) {
       setError("Content is not valid or missing content ID");
       return;
     }
     setLoading(true);
     try {
+      const contentId = content.id || content._id;
       const { data } = await API.post("/brain/share", {
-        contentId: content.id,
+        contentId,
         share: true,
       });
       console.log("API Response:", data); // Log API response

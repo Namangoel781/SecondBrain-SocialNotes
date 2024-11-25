@@ -4,6 +4,7 @@ import userRoutes from "./routes/userRoutes"
 import connectDb from "./db";
 import contentRoutes from "./routes/contentRoutes"
 import tweetRoutes from "./routes/tweetRoutes"
+import youtubeRoutes from "./routes/youtubeRoutes"
 import { errorHandler } from "./Middleware/errorHandler";
 import dotenv from "dotenv"
 
@@ -24,6 +25,8 @@ app.use("/api/v1/auth", userRoutes)
 app.use('/api/v1', contentRoutes)
 
 app.use("/api/v1", tweetRoutes)
+
+app.use("/api/v1", youtubeRoutes )
 
 app.use(errorHandler);
 
