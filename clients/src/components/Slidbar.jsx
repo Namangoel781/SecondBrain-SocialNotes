@@ -7,18 +7,32 @@ import {
   Twitter,
   Video,
   Share2Icon,
+  Menu,
+  X,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 const Sidebar = ({ setActiveTab, activeTab }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
   const handleTabSwitch = (tab) => {
-    setActiveTab(tab); // Set the active tab
+    setActiveTab(tab);
+    setIsOpen(false);
   };
 
-  return (
-    <aside className="w-64 border-r bg-white p-4 flex flex-col">
+  const SidebarContent = () => (
+    <>
       <div className="flex items-center gap-2 mb-8">
         <Brain className="w-8 h-8 text-indigo-600" />
-        <span className="text-xl font-bold text-slate-800">Second Brain</span>
+        <span className="text-xl font-bold text-foreground">Second Brain</span>
       </div>
       <nav className="space-y-2">
         <SidebarButton
@@ -58,19 +72,62 @@ const Sidebar = ({ setActiveTab, activeTab }) => {
           onClick={() => handleTabSwitch("shared")}
         />
       </nav>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex w-64 border-r bg-background p-4 flex-col">
+        <SidebarContent />
+      </aside>
+
+      {/* Mobile Drawer */}
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+        <SheetTrigger asChild>
+          <Button
+            variant="outline"
+            size="icon"
+            className="md:hidden fixed top-4 left-4 z-50"
+            aria-label="Open menu"
+          >
+            <Menu className="h-4 w-4" />
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="left" className="w-64 p-4">
+          <SheetHeader>
+            <SheetTitle className="flex justify-between items-center">
+              Menu
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsOpen(false)}
+                aria-label="Close menu"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </SheetTitle>
+          </SheetHeader>
+          <SidebarContent />
+        </SheetContent>
+      </Sheet>
+    </>
   );
 };
 
 const SidebarButton = ({ icon, label, onClick, isActive }) => (
-  <button
+  <Button
+    variant={isActive ? "ghost" : "ghost"}
+    className={cn(
+      "w-full justify-start hover:bg-indigo-50 hover:text-indigo-600",
+      isActive &&
+        "bg-indigo-100 text-indigo-600 hover:bg-indigo-200 hover:text-indigo-700"
+    )}
     onClick={onClick}
-    className={`w-full flex items-center gap-2 px-3 py-2 text-slate-700 rounded-md transition-colors 
-      ${isActive ? "bg-indigo-100 text-indigo-600" : "hover:bg-slate-100"}`}
   >
     {icon}
-    <span>{label}</span>
-  </button>
+    <span className="ml-2">{label}</span>
+  </Button>
 );
 
 export default Sidebar;
