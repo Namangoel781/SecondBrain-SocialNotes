@@ -18,16 +18,13 @@ const Dashboard = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null); // Success message state
+  const [success, setSuccess] = useState(null);
   const [selectedNote, setSelectedNote] = useState(null);
   const [activeTab, setActiveTab] = useState("tweets");
-  const [isSharedContentModalOpen, setIsSharedContentModalOpen] =
-    useState(false);
 
-  const navigate = useNavigate(); // Navigation hook
+  const navigate = useNavigate();
   const itemsPerPage = 6;
 
-  // Pagination setup for all content types
   const {
     paginatedItems,
     currentPage,
@@ -47,7 +44,7 @@ const Dashboard = () => {
       } else {
         const normalizedNotes = notesData.map((note) => ({
           ...note,
-          id: note._id, // Use `_id` as unique ID
+          id: note._id,
           title: note.title || "Untitled",
           tags: Array.isArray(note.tags) ? note.tags : [],
           date: note.date || "No Date",
@@ -63,7 +60,7 @@ const Dashboard = () => {
   };
 
   const addContent = async (contentData) => {
-    const validTypes = ["video", "article", "image", "tweets"]; // Ensure correct types
+    const validTypes = ["video", "article", "image", "tweets"];
     if (!validTypes.includes(contentData.type)) {
       setError(
         `Invalid type: ${contentData.type}. Please select a valid type.`
@@ -76,8 +73,6 @@ const Dashboard = () => {
       return;
     }
 
-    console.log("Sending contentData:", contentData);
-
     const token = localStorage.getItem("token");
     if (!token) {
       setError("You must be logged in to perform this action.");
@@ -88,10 +83,9 @@ const Dashboard = () => {
       const response = await API.post("/content", contentData, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       const savedContent = response.data.content;
       setNotes((prevNotes) => [...prevNotes, savedContent]);
-      setSuccess("Content added successfully!"); // Set success message
+      setSuccess("Content added successfully!");
       setIsAddModalOpen(false);
     } catch (error) {
       console.error("Error adding content:", error);
@@ -103,51 +97,42 @@ const Dashboard = () => {
   };
 
   const deleteNote = async (contentId, video) => {
-    if (!video || !video._id) {
-      console.error("Video object or video.id is undefined");
+    console.log("deleteNote called with:", { contentId, video });
+
+    if (!contentId) {
+      console.error("Content ID is undefined");
+      setError("Invalid content ID. Please try again.");
       return;
     }
 
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setError("You must be logged in to perform this action.");
-      return;
-    }
+    // if (!video || !video._id) {
+    //   console.warn("Video object or video._id is undefined");
+    //   return;
+    // }
 
     try {
-      const url = `/content/${contentId}`;
-      await API.delete(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const token = localStorage.getItem("token");
+      await API.delete(`/content/${contentId}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
       setNotes((prevNotes) =>
         prevNotes.filter((note) => note.id !== contentId)
       );
-      setSuccess("Content deleted successfully!"); // Set success message
+      setSuccess("Content deleted successfully!");
     } catch (error) {
       console.error("Error deleting note:", error);
-      setError(
-        error.response?.data?.message ||
-          "Failed to delete note. Please try again."
-      );
+      setError("Failed to delete note. Please try again.");
     }
   };
 
   const handleShare = (content, type) => {
-    if (type === "note") {
-      if (content && content.id && content.title) {
-        setSelectedNote(content);
-        setIsShareModalOpen(true);
-      } else {
-        setError("Selected note is invalid");
-      }
-    } else if (type === "video") {
+    console.log("handleShare called with content:", content);
+    if (type === "note" || type === "video") {
       if (content && content._id && content.title) {
         setSelectedNote(content);
         setIsShareModalOpen(true);
       } else {
-        setError("Selected video is invalid");
+        setError(`Selected ${type} is invalid`);
       }
     } else {
       setError("Invalid content type for sharing");
@@ -157,7 +142,7 @@ const Dashboard = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
-      navigate("/login"); // Redirect to login if no token
+      navigate("/login");
     } else {
       fetchNotes();
     }
@@ -218,10 +203,7 @@ const Dashboard = () => {
             <SavedYTVidoes
               notes={paginatedItems.filter((note) => note.type === "video")}
               onDelete={deleteNote}
-              onShare={(video) => {
-                console.log("Video object:", video);
-                handleShare(video, "video");
-              }}
+              onShare={(video) => handleShare(video, "video")}
             />
           ) : (
             <div className="text-center text-muted-foreground">

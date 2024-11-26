@@ -20,7 +20,6 @@ export default function ShareModal({ isOpen, onClose, content }) {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    console.log("Content passed to ShareModal:", content); // Log content
     if (!isOpen) {
       setShareLink("");
       setError("");
